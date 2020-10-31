@@ -17,11 +17,13 @@ namespace Webian\Visualedit\Controller;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Query\Restriction\BackendWorkspaceRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\HiddenRestriction;
 use TYPO3\CMS\Core\Http\HtmlResponse;
@@ -31,6 +33,7 @@ use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Page\PageRenderer;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Mvc\View\ViewInterface;
 use TYPO3\CMS\Fluid\View\StandaloneView;
@@ -94,8 +97,10 @@ class VisualeditModuleController
      * @param int $pageId
      * @param int $languageId
      * @param string $targetUrl
+     * @param ServerRequestInterface|null $request
+     * @throws \TYPO3\CMS\Backend\Routing\Exception\RouteNotFoundException
      */
-    protected function registerDocHeader(int $pageId, int $languageId, string $targetUrl)
+    protected function registerDocHeader(int $pageId, int $languageId, string $targetUrl, ServerRequestInterface $request = null)
     {
         $languages = $this->getPreviewLanguages($pageId);
         if (count($languages) > 1) {
@@ -130,6 +135,84 @@ class VisualeditModuleController
             ->setTitle($this->getLanguageService()->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.showPage'))
             ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-view-page', Icon::SIZE_SMALL));
         $buttonBar->addButton($showButton);
+
+        // Add clear cache button and edit page button to module docheader
+        // (code adapted from \TYPO3\CMS\Backend\Controller\PageLayoutController)
+        $request = $request ?: $GLOBALS['TYPO3_REQUEST'];
+        $lang = $this->getLanguageService();
+        $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
+        // Cache
+        if (empty(BackendUtility::getPagesTSconfig($pageId)['properties']['disableAdvanced'])) {
+            $clearCacheButton = $buttonBar->makeLinkButton()
+                ->setHref((string)$uriBuilder->buildUriFromRoute($this->moduleName, ['id' => $pageId, 'clear_cache' => '1']))
+                ->setTitle($lang->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.clear_cache'))
+                ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-system-cache-clear', Icon::SIZE_SMALL));
+            $buttonBar->addButton($clearCacheButton, ButtonBar::BUTTON_POSITION_RIGHT, 1);
+        }
+        if (empty(BackendUtility::getPagesTSconfig($pageId)['properties']['disableIconToolbar'])) {
+            // Edit page properties and page language overlay icons
+            if ($this->isPageEditable(0)) {
+                /** @var \TYPO3\CMS\Core\Http\NormalizedParams */
+                $normalizedParams = $request->getAttribute('normalizedParams');
+                // Edit localized pages only when one specific language is selected
+                if ($languageId > 0) {
+                    $localizationParentField = $GLOBALS['TCA']['pages']['ctrl']['transOrigPointerField'];
+                    $languageField = $GLOBALS['TCA']['pages']['ctrl']['languageField'];
+                    $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+                        ->getQueryBuilderForTable('pages');
+                    $queryBuilder->getRestrictions()
+                        ->removeAll()
+                        ->add(GeneralUtility::makeInstance(DeletedRestriction::class))
+                        ->add(GeneralUtility::makeInstance(BackendWorkspaceRestriction::class));
+                    $overlayRecord = $queryBuilder
+                        ->select('uid')
+                        ->from('pages')
+                        ->where(
+                            $queryBuilder->expr()->eq(
+                                $localizationParentField,
+                                $queryBuilder->createNamedParameter($pageId, \PDO::PARAM_INT)
+                            ),
+                            $queryBuilder->expr()->eq(
+                                $languageField,
+                                $queryBuilder->createNamedParameter($languageId, \PDO::PARAM_INT)
+                            )
+                        )
+                        ->setMaxResults(1)
+                        ->execute()
+                        ->fetch();
+                    // Edit button
+                    $urlParameters = [
+                        'edit' => [
+                            'pages' => [
+                                $overlayRecord['uid'] => 'edit'
+                            ]
+                        ],
+                        'returnUrl' => $normalizedParams->getRequestUri(),
+                    ];
+
+                    $url = (string)$uriBuilder->buildUriFromRoute('record_edit', $urlParameters);
+                    $editLanguageButton = $buttonBar->makeLinkButton()
+                        ->setHref($url)
+                        ->setTitle($lang->sL('LLL:EXT:backend/Resources/Private/Language/locallang_layout.xlf:editPageLanguageOverlayProperties'))
+                        ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('mimetypes-x-content-page-language-overlay', Icon::SIZE_SMALL));
+                    $buttonBar->addButton($editLanguageButton, ButtonBar::BUTTON_POSITION_LEFT, 3);
+                }
+                $urlParameters = [
+                    'edit' => [
+                        'pages' => [
+                            $pageId => 'edit'
+                        ]
+                    ],
+                    'returnUrl' => $normalizedParams->getRequestUri(),
+                ];
+                $url = (string)$uriBuilder->buildUriFromRoute('record_edit', $urlParameters);
+                $editPageButton = $buttonBar->makeLinkButton()
+                    ->setHref($url)
+                    ->setTitle($lang->sL('LLL:EXT:backend/Resources/Private/Language/locallang_layout.xlf:editPageProperties'))
+                    ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-page-open', Icon::SIZE_SMALL));
+                $buttonBar->addButton($editPageButton, ButtonBar::BUTTON_POSITION_LEFT, 3);
+            }
+        }
 
         // Add refresh button to module docheader
         $refreshButton = $buttonBar->makeLinkButton()
@@ -186,7 +269,7 @@ class VisualeditModuleController
                 '',
                 $this->getTypeParameterIfSet($pageId) . '&L=' . $languageId
             );
-            $this->registerDocHeader($pageId, $languageId, $targetUrl);
+            $this->registerDocHeader($pageId, $languageId, $targetUrl, $request);
 
             $iconFactory = GeneralUtility::makeInstance(IconFactory::class);
             $icons = [];
@@ -387,6 +470,23 @@ class VisualeditModuleController
             && $pageType !== PageRepository::DOKTYPE_SPACER
             && $pageType !== PageRepository::DOKTYPE_SYSFOLDER
             && $pageType !== PageRepository::DOKTYPE_RECYCLER;
+    }
+
+    /**
+     * Check if page can be edited by current user
+     *
+     * @param int|null $languageId
+     * @return bool
+     */
+    protected function isPageEditable(int $languageId): bool
+    {
+        if ($this->getBackendUser()->isAdmin()) {
+            return true;
+        }
+
+        return !$this->pageinfo['editlock']
+            && $this->getBackendUser()->doesUserHaveAccess($this->pageinfo, Permission::PAGE_EDIT)
+            && $this->getBackendUser()->checkLanguageAccess($languageId);
     }
 
     /**
