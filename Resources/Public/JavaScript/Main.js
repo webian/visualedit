@@ -31,18 +31,16 @@ define([
     sizeIdentifier: ' .t3js-visualedit-size',
     moduleBodySelector: '.t3js-module-body',
 
-    defaultLabel: $('.t3js-preset-custom-label').html().trim(),
+    defaultLabel: 'Custom',
     minimalHeight: 300,
     minimalWidth: 300,
 
-    storagePrefix: 'moduleData.web_visualedit.States.',
+    storagePrefix: 'moduleData.web_view.States.',
     $iframe: null,
     $resizableContainer: null,
     $sizeSelector: null,
 
     customSelector: '.t3js-preset-custom',
-    customWidthSelector: '.t3js-preset-custom-width',
-    customHeightSelector: '.t3js-preset-custom-height',
 
     changeOrientationSelector: '.t3js-change-orientation',
     changePresetSelector: '.t3js-change-preset',
@@ -50,8 +48,8 @@ define([
     inputWidthSelector: '.t3js-visualedit-input-width',
     inputHeightSelector: '.t3js-visualedit-input-height',
 
+    currentButtonSelector: '.t3js-preset-current',
     currentLabelSelector: '.t3js-visualedit-current-label',
-    topbarContainerSelector: '.t3js-visualedit-topbar',
 
     queue: [],
     queueIsRunning: false,
@@ -82,27 +80,45 @@ define([
   }
 
   VisualEdit.setSize = function(width, height) {
-    if (isNaN(height)) {
-      height = VisualEdit.calculateContainerMaxHeight();
-    }
-    if (height < VisualEdit.minimalHeight) {
-      height = VisualEdit.minimalHeight;
-    }
-    if (isNaN(width)) {
-      width = VisualEdit.calculateContainerMaxWidth();
-    }
-    if (width < VisualEdit.minimalWidth) {
-      width = VisualEdit.minimalWidth;
-    }
+    if (isNaN(width) || isNaN(height)) {
+      // Both width and height not set => go full size
+      $(VisualEdit.currentButtonSelector).removeData('width');
+      $(VisualEdit.currentButtonSelector).removeData('height')
 
-    $(VisualEdit.inputWidthSelector).val(width);
-    $(VisualEdit.inputHeightSelector).val(height);
+      VisualEdit.$resizableContainer.css({
+        width: '100%',
+        height: '100%',
+        left: 0
+      });
 
-    VisualEdit.$resizableContainer.css({
-      width: width,
-      height: height,
-      left: 0
-    });
+      $(VisualEdit.inputWidthSelector).val('');
+      $(VisualEdit.inputHeightSelector).val('');
+    } else {
+      if (isNaN(width)) {
+        width = VisualEdit.calculateContainerMaxWidth();
+      }
+      if (width < VisualEdit.minimalWidth) {
+        width = VisualEdit.minimalWidth;
+      }
+      if (isNaN(height)) {
+        height = VisualEdit.calculateContainerMaxHeight();
+      }
+      if (height < VisualEdit.minimalHeight) {
+        height = VisualEdit.minimalHeight;
+      }
+
+      $(VisualEdit.currentButtonSelector).data('width', width);
+      $(VisualEdit.currentButtonSelector).data('height', height);
+
+      $(VisualEdit.inputWidthSelector).val(width);
+      $(VisualEdit.inputHeightSelector).val(height);
+
+      VisualEdit.$resizableContainer.css({
+        width: width,
+        height: height,
+        left: 0
+      });
+    }
   }
 
   VisualEdit.getCurrentWidth = function() {
@@ -114,6 +130,7 @@ define([
   }
 
   VisualEdit.setLabel = function(label) {
+    $(VisualEdit.currentButtonSelector).data('label', label);
     $(VisualEdit.currentLabelSelector).html(label);
   }
 
@@ -137,8 +154,11 @@ define([
     }
     $(VisualEdit.customSelector).data("width", data.width);
     $(VisualEdit.customSelector).data("height", data.height);
-    $(VisualEdit.customWidthSelector).html(data.width);
-    $(VisualEdit.customHeightSelector).html(data.height);
+    
+    var newCustomLabel = 'Custom (' + data.width + 'x' + data.height + ')';
+    $(VisualEdit.customSelector).attr("title", newCustomLabel);
+    $(VisualEdit.customSelector).contents().filter(function(){ return this.nodeType == 3; }).first().replaceWith(newCustomLabel);
+
     VisualEdit.addToQueue(VisualEdit.storagePrefix + 'custom', data);
   }
 
@@ -146,6 +166,7 @@ define([
     clearTimeout(VisualEdit.queueDelayTimer);
     VisualEdit.queueDelayTimer = setTimeout(function() {
       VisualEdit.persistCustomPreset();
+      VisualEdit.persistCurrentPreset();
     }, 1000);
   };
 
@@ -153,10 +174,16 @@ define([
    * Initialize
    */
   VisualEdit.initialize = function() {
+    // Mark current preset button (main split btn) label as currentLabelSelector
+    $(VisualEdit.currentButtonSelector).contents().eq(2).wrap('<span class="t3js-visualedit-current-label"/>');
 
     VisualEdit.$iframe = $('#tx_visualedit_iframe');
     VisualEdit.$resizableContainer = $(VisualEdit.resizableContainerIdentifier);
     VisualEdit.$sizeSelector = $(VisualEdit.sizeIdentifier);
+
+    // Set current preset button data with current state
+    $(VisualEdit.currentButtonSelector).data('width', $(VisualEdit.inputWidthSelector).val());
+    $(VisualEdit.currentButtonSelector).data('height', $(VisualEdit.inputHeightSelector).val());
 
     // Change orientation
     $(document).on('click', VisualEdit.changeOrientationSelector, function() {
@@ -185,6 +212,7 @@ define([
     // Add event to width selector so the container is resized
     $(document).on('click', VisualEdit.changePresetSelector, function() {
       var data = $(this).data();
+      $(VisualEdit.currentButtonSelector).data('key', data.key)
       VisualEdit.setSize(parseInt(data.width), parseInt(data.height));
       VisualEdit.setLabel(data.label);
       VisualEdit.persistCurrentPreset();
@@ -230,10 +258,9 @@ define([
     VisualEdit.$resizableContainer.hide();
     var $moduleBody = $(VisualEdit.moduleBodySelector);
     var padding = $moduleBody.outerHeight() - $moduleBody.height(),
-      documentHeight = $(document).height(),
-      topbarHeight = $(VisualEdit.topbarContainerSelector).outerHeight();
+      documentHeight = $(document).height();
     VisualEdit.$resizableContainer.show();
-    return documentHeight - padding - topbarHeight - 8;
+    return documentHeight - padding - 8;
   };
 
   /**

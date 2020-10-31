@@ -1,0 +1,50 @@
+.typo3-module-visualedit {
+  background-color: #494949;
+}
+.typo3-module-visualedit .module {
+  background-color: transparent;
+}
+.typo3-module-visualedit .module span.btn.btn-default {
+  border: 0;
+  background-color: transparent;
+  padding: 2px;
+}
+.typo3-module-visualedit .module span.btn.btn-default.active,
+.typo3-module-visualedit .module span.btn.btn-default:active {
+  box-shadow: none;
+}
+.typo3-module-visualedit .module .t3js-change-preset .icon-miscellaneous-placeholder {
+  display: none;
+}
+.typo3-module-visualedit .module .dropdown-menu .btn:not(.divider) {
+  background-color: #292929;
+  text-align: left;
+  width: 100%;
+}
+.typo3-module-visualedit .module .dropdown-menu .btn:not(.divider):hover,
+.typo3-module-visualedit .module .dropdown-menu .btn:not(.divider):focus,
+.typo3-module-visualedit .module .dropdown-menu .btn:not(.divider).focus {
+  color: #ffffff;
+  background-color: #424242;
+}
+.typo3-module-visualedit .module .dropdown-menu .btn.divider {
+  cursor: default;
+  color: #ffffff;
+  background-color: #292929;
+}
+.typo3-module-visualedit .module .dropdown-menu .icon-markup {
+  filter: invert(1);
+}
+.typo3-module-visualedit .module .module-body {
+  padding: 65px 0 0 0 !important;
+  overflow: hidden;
+  text-align: center;
+}
+.typo3-module-visualedit .module .module-body .visualedit-resizeable {
+  display: inline-block;
+}
+.typo3-module-visualedit .module .module-body #tx_visualedit_iframe {
+  border: 0;
+  height: 100%;
+  width: 100%;
+}
