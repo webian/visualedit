@@ -282,12 +282,12 @@ class VisualeditModuleController
             $icons['mobile'] = $iconFactory->getIcon('actions-device-mobile', Icon::SIZE_SMALL)->render('inline');
             $icons['unidentified'] = $iconFactory->getIcon('actions-device-unidentified', Icon::SIZE_SMALL)->render('inline');
 
-            $current = ($this->getBackendUser()->uc['moduleData']['web_visualedit']['States']['current'] ?: []);
+            $current = ($this->getBackendUser()->uc['moduleData']['web_view']['States']['current'] ?: []);
             $current['label'] = ($current['label'] ?? $this->getLanguageService()->sL('LLL:EXT:visualedit/Resources/Private/Language/locallang.xlf:custom'));
             $current['width'] = (isset($current['width']) && (int)$current['width'] >= 300 ? (int)$current['width'] : 320);
             $current['height'] = (isset($current['height']) && (int)$current['height'] >= 300 ? (int)$current['height'] : 480);
 
-            $custom = ($this->getBackendUser()->uc['moduleData']['web_visualedit']['States']['custom'] ?: []);
+            $custom = ($this->getBackendUser()->uc['moduleData']['web_view']['States']['custom'] ?: []);
             $custom['width'] = (isset($current['custom']) && (int)$current['custom'] >= 300 ? (int)$current['custom'] : 320);
             $custom['height'] = (isset($current['custom']) && (int)$current['custom'] >= 300 ? (int)$current['custom'] : 480);
 
@@ -346,7 +346,7 @@ class VisualeditModuleController
             'mobile' => [],
             'unidentified' => []
         ];
-        $previewFrameWidthConfig = BackendUtility::getPagesTSconfig($pageId)['mod.']['web_visualedit.']['previewFrameWidths.'] ?? [];
+        $previewFrameWidthConfig = BackendUtility::getPagesTSconfig($pageId)['mod.']['web_view.']['previewFrameWidths.'] ?? [];
         foreach ($previewFrameWidthConfig as $item => $conf) {
             $data = [
                 'key' => substr($item, 0, -1),
@@ -440,13 +440,13 @@ class VisualeditModuleController
     {
         $languageId = (int)$languageParam;
         if ($languageParam === null) {
-            $states = $this->getBackendUser()->uc['moduleData']['web_visualedit']['States'];
+            $states = $this->getBackendUser()->uc['moduleData']['web_view']['States'];
             $languages = $this->getPreviewLanguages($pageId);
             if (isset($states['languageSelectorValue']) && isset($languages[$states['languageSelectorValue']])) {
                 $languageId = (int)$states['languageSelectorValue'];
             }
         } else {
-            $this->getBackendUser()->uc['moduleData']['web_visualedit']['States']['languageSelectorValue'] = $languageId;
+            $this->getBackendUser()->uc['moduleData']['web_view']['States']['languageSelectorValue'] = $languageId;
             $this->getBackendUser()->writeUC($this->getBackendUser()->uc);
         }
         return $languageId;
