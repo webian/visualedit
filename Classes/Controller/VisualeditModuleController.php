@@ -231,6 +231,8 @@ class VisualeditModuleController
                 ->setGetVariables($getVars);
             $buttonBar->addButton($shortcutButton, ButtonBar::BUTTON_POSITION_RIGHT);
         }
+
+        $this->addResponsiveUI($buttonBar);
     }
 
     /**
@@ -273,7 +275,6 @@ class VisualeditModuleController
 
             $iconFactory = GeneralUtility::makeInstance(IconFactory::class);
             $icons = [];
-            $icons['orientation'] = $iconFactory->getIcon('actions-device-orientation-change', Icon::SIZE_SMALL)->render('inline');
             $icons['fullscreen'] = $iconFactory->getIcon('actions-fullscreen', Icon::SIZE_SMALL)->render('inline');
             $icons['expand'] = $iconFactory->getIcon('actions-expand', Icon::SIZE_SMALL)->render('inline');
             $icons['desktop'] = $iconFactory->getIcon('actions-device-desktop', Icon::SIZE_SMALL)->render('inline');
@@ -503,5 +504,21 @@ class VisualeditModuleController
     protected function getLanguageService(): LanguageService
     {
         return $GLOBALS['LANG'];
+    }
+
+    /**
+     * Add responsive UI to module docheader
+     *
+     * @param ButtonBar $buttonBar
+     */
+    private function addResponsiveUI(ButtonBar $buttonBar)
+    {
+        // Add device orientation button to module docheader
+        $orientationButton = $buttonBar->makeLinkButton()
+            ->setHref('#')
+            ->setClasses('t3js-change-orientation')
+            ->setTitle($this->getLanguageService()->getLL('orientationButtonTitle'))
+            ->setIcon($this->moduleTemplate->getIconFactory()->getIcon('actions-device-orientation-change', Icon::SIZE_SMALL));
+        $buttonBar->addButton($orientationButton, ButtonBar::BUTTON_POSITION_LEFT, 10);
     }
 }
