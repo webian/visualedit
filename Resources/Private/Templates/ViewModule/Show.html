@@ -1,0 +1,81 @@
+<f:layout name="DocHeader" />
+<f:section name="Content">
+	<f:flashMessages />
+	<f:if condition="{url}">
+		<div class="visualedit-item">
+			<div class="visualedit-topbar t3js-visualedit-topbar">
+				<div class="visualedit-topbar-orientation t3js-visualedit-topbar-orientation">
+					<a href="#" class="t3js-change-orientation">
+						{icons.orientation -> f:format.raw()}
+					</a>
+				</div>
+				<div class="visualedit-topbar-preset">
+				<span class="dropdown">
+					<button class="dropdown-toggle" type="button" id="visualedit-topbar-preset-button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+						<span class="t3js-visualedit-current-label">
+							{current.label}
+						</span>
+						<span class="caret"></span>
+					</button>
+					<ul class="dropdown-menu" aria-labelledby="visualedit-topbar-preset-button">
+						<li role="separator" class="divider"></li>
+						<li>
+							<a href="#" class="t3js-preset-maximized t3js-change-preset" data-key="maximized" data-label="{f:translate(key: 'maximized')}" data-width data-height>
+								<span class="visualedit-preset-item">
+									<span class="visualedit-preset-item-icon">{icons.fullscreen -> f:format.raw()}</span>
+									<span class="visualedit-preset-item-label">
+										{f:translate(key: 'maximized')}
+									</span>
+									<span class="visualedit-preset-item-size">
+										100%/100%
+									</span>
+								</span>
+							</a>
+						</li>
+						<li>
+							<a href="#" class="t3js-preset-custom t3js-change-preset" data-key="custom" data-label="{f:translate(key: 'custom')}" data-width="{custom.width}" data-height="{custom.height}">
+								<span class="visualedit-preset-item">
+									<span class="visualedit-preset-item-icon">{icons.expand -> f:format.raw()}</span>
+									<span class="visualedit-preset-item-label t3js-preset-custom-label">
+										{f:translate(key: 'custom')}
+									</span>
+									<span class="visualedit-preset-item-size">
+										<span class="t3js-preset-custom-width">{custom.width}</span>px/<span class="t3js-preset-custom-height">{custom.height}</span>px
+									</span>
+								</span>
+							</a>
+						</li>
+
+						<f:for each="{presetGroups}" as="presetGroup" iteration="presetGroupIteration">
+							<f:if condition="{presetGroup}">
+								<li role="separator" class="divider"></li>
+								<f:for each="{presetGroup}" as="preset">
+									<li>
+										<a href="#" class="t3js-change-preset" data-key="{preset.key}" data-label="{preset.label}" data-width="{preset.width}" data-height="{preset.height}">
+											<span class="visualedit-preset-item">
+												<span class="visualedit-preset-item-icon">{icons.{preset.type} -> f:format.raw()}</span>
+												<span class="visualedit-preset-item-label">{preset.label}</span>
+												<span class="visualedit-preset-item-size">
+													{f:if(condition: preset.width, then: '{preset.width}px', else: '100%')}/{f:if(condition: preset.height, then: '{preset.height}px', else: '100%')}
+												</span>
+											</span>
+										</a>
+									</li>
+								</f:for>
+							</f:if>
+						</f:for>
+					</ul>
+				</span>
+				</div>
+				<div class="visualedit-topbar-size">
+					<input class="t3js-visualedit-input-width" type="number" name="width" min="300" max="9999" value="{current.width}">
+					x
+					<input class="t3js-visualedit-input-height" type="number" name="height" min="300" max="9999" value="{current.height}">
+				</div>
+			</div>
+			<div class="visualedit-resizeable t3js-visualedit-resizeable" style="width:{current.width}px;height:{current.height}px;">
+				<iframe src="{url}" width="100%" height="100%" id="tx_visualedit_iframe" frameborder="0" border="0"></iframe>
+			</div>
+		</div>
+	</f:if>
+</f:section>

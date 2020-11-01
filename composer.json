@@ -1,0 +1,23 @@
+{
+	"name": "webian/visualedit",
+	"type": "typo3-cms-extension",
+	"description": "Frontend editing inside the backend",
+	"license": ["GPL-2.0-or-later"],
+	"authors": [{
+		"name": "Christian Toffolo",
+		"email": "ian@webian.it",
+		"role": "Developer",
+		"homepage": "https://www.webian.it/"
+	}],
+	"config": {
+		"sort-packages": true
+	},
+	"require": {
+		"typo3/cms-core": "^9.5"
+	},
+	"autoload": {
+		"psr-4": {
+			"Webian\\Visualedit\\": "Classes/"
+		}
+	}
+}
