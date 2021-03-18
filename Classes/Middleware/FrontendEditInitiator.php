@@ -51,7 +51,8 @@ class FrontendEditInitiator implements MiddlewareInterface
             $GLOBALS['TSFE']->displayEditIcons = '1';
             $GLOBALS['TSFE']->displayFieldEditIcons = '1';
             $GLOBALS['TSFE']->set_no_cache('EXT:Visualedit - Frontend editing', true);
-            GeneralUtility::makeInstance(FrontendEditDataHandler::class)->editAction();
+//            $parameters = [];
+//            GeneralUtility::makeInstance(FrontendEditDataHandler::class, $parameters)->editAction();
         }
         return $handler->handle($request);
     }
